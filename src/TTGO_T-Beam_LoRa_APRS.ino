@@ -37,7 +37,15 @@
 // #define DEBUG             // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
 
+#define DF1OE
+#ifdef DF1OE
+// Hier kann die eigene config.h eingetragen werden
+#include <TTGO_T-Beam_LoRa_APRS_DF1OE_config.h> // to config user parameters
+#else
 #include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
+#endif
+
+
 #include <Arduino.h>
 #include <Preferences.h>
 #include <Adafruit_Sensor.h>
@@ -107,14 +115,12 @@ int button_ctr=0;
 // bool ssd1306_found = false;
 // bool axp192_found = false;
 
-#define TRACKER 0
-#define WX_TRACKER 1
-#define WX_MOVE 2
-#define WX_FIXED 3
+enum Tx_Mode {TRACKER, WX_TRACKER, WX_MOVE, WX_FIXED};
 // Position from GPS for TRACKER and WX_TRACKER
 // Position for WX_ONLY from Headerfile!!!
 
-uint8_t tracker_mode;
+Tx_Mode tracker_mode;
+
 
 // Pins for GPS
 #ifdef T_BEAM_V1_0
@@ -252,7 +258,8 @@ void setup_data(void);
     DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
   #endif
 #endif
-boolean tempsensoravailable=true;
+// Not used anywhere
+// boolean tempsensoravailable=false;
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
@@ -279,17 +286,13 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 void setup()
 {
-  bool bme_status;
+ // bool bme_status;
 
   for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
 
-  #ifndef DONT_USE_FLASH_MEMORY
-     prefs.begin("nvs", false);
-     tracker_mode = (uint8_t) prefs.getChar("tracker_mode", TRACKERMODE);
-     prefs.end();
-  #else
-    tracker_mode = TRACKERMODE;
-  #endif
+  prefs.begin("nvs", false);
+  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", TRACKERMODE);
+  prefs.end();
 
   //tracker_mode = current_mode;
   /////////////////
@@ -300,6 +303,8 @@ void setup()
   } else  {
     wx = false;
   }
+
+  tracker_mode = TRACKER;
 
   pinMode(TXLED, OUTPUT);
   pinMode(BUTTON, INPUT);
@@ -529,7 +534,7 @@ void loop() {
           break;
       }
       prefs.begin("nvs", false);
-      prefs.putChar("tracker_mode", (char) tracker_mode);
+      prefs.putChar("tracker_mode", (char)tracker_mode);
       prefs.end();
       button_ctr=0;
       // ESP.restart();
@@ -820,9 +825,7 @@ void recalcGPS(){
   char helper_base91[] = {"0000\0"};
   float Tlat=48.2012, Tlon=15.6361;
   int i, Talt, lenalt;
-  uint32_t aprs_lat, aprs_lon;
-  float Lat=0.0;
-  float Lon=0.0;
+  uint32_t aprs_lat=0.0, aprs_lon=0.0;
   float Tspeed=0, Tcourse=0;
   String Speedx, Coursex, Altx;
 
@@ -847,14 +850,10 @@ void recalcGPS(){
 
     if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
     if(Tlat < 0) { Tlat= -Tlat; }
-    unsigned int Deg_Lat = Tlat;
-    Lat = 100*(Deg_Lat) + (Tlat - Deg_Lat)*60;
-
+  
     if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
     if(Tlon < 0) { Tlon= -Tlon; }
-    unsigned int Deg_Lon = Tlon;
-    Lon = 100*(Deg_Lon) + (Tlon - Deg_Lon)*60;
-  }
+     }
 
 outString = "";
 
@@ -1175,14 +1174,20 @@ case WX_MOVE:
       ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
       outString += helper_base91[0];
       outString += "\x48";
-      #ifdef HW_COMMENT
+     
+      outString += MY_COMMENT;
+      outString += " - Sats seen: ";
+      outString += String(gps.satellites.value()) + " ";
+
+       #ifdef HW_COMMENT
         outString += "/A=";
         outString += Altx;
         outString += " Batt=";
         outString += String(BattVolts,2);
         outString += ("V");
       #endif
-      outString += MY_COMMENT;
+
+      outString += MY_COMMENT2;
     #endif
     Serial.print("outString=");
     // Speedx = String(Tspeed,0);
@@ -1203,7 +1208,7 @@ void sendpacket()
 switch(tracker_mode) {
   case WX_FIXED:
     recalcGPS();                        //
-    Outputstring =outString;
+    Outputstring = outString;
     loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
     break;
   case TRACKER:
@@ -1212,7 +1217,7 @@ switch(tracker_mode) {
   default:
     if ( gps.location.isValid()   || gps.location.isUpdated() ) {
       recalcGPS();                        //
-      Outputstring =outString;
+      Outputstring = outString;
       loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
     }  else {
       Outputstring = (Tcall);
@@ -1261,10 +1266,10 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
 ///////////////////////////////////////////////////////////////////////////////////////
 void batt_read()
 {
-  float BattRead = analogRead(35)*7.221;
 #ifdef T_BEAM_V1_0
   BattVolts = axp.getBattVoltage()/1000;
 #else
+  float BattRead = analogRead(35)*7.221;
   BattVolts = (BattRead / 4096);
 #endif
 }
