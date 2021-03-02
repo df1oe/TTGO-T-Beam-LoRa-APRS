@@ -234,7 +234,7 @@ float avg_c_y, avg_c_x;
   float millis_angle[ANGLE_AVGS];
 #endif
 
-//#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
+#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
