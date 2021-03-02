@@ -14,9 +14,8 @@ In Hannover we have some trouble with the compressed tracker mode. Some RPi+GWHa
 We will investigate the reasons
 
 Therefore compression  
-...cpp
 # define TX_BASE91
-... in line 240 of ../src/TTGO_T-Beam_LoRa_APRS.ino is commented out.
+in line 240 of ../src/TTGO_T-Beam_LoRa_APRS.ino is commented out.
 
 
 ## Intention
