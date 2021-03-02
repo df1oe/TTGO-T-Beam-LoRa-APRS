@@ -234,7 +234,7 @@ float avg_c_y, avg_c_x;
   float millis_angle[ANGLE_AVGS];
 #endif
 
-#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
+//#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
@@ -524,6 +524,7 @@ void loop() {
           break;
         case WX_FIXED:
         default:
+      
           tracker_mode = TRACKER;
           writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",500);
           Serial.println("LoRa-APRS / New Mode / TRACKER");
@@ -1154,14 +1155,21 @@ case WX_MOVE:
       Speedx = String(Tspeed,0);
       Speedx.replace(" ","");
       outString += Speedx;
-      #ifdef HW_COMMENT
+      
+      outString += MY_COMMENT;
+      outString += " - Sats seen: ";
+      outString += String(gps.satellites.value()) + " ";
+
+       #ifdef HW_COMMENT
         outString += "/A=";
         outString += Altx;
         outString += " Batt=";
         outString += String(BattVolts,2);
         outString += ("V");
       #endif
-      outString += MY_COMMENT;
+
+      outString += MY_COMMENT2;
+
       #ifdef DEBUG
         outString += (" Debug: ");
         outString += TxRoot;
