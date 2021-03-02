@@ -821,11 +821,15 @@ char *ax25_base91enc(char *s, uint8_t n, uint32_t v)
 //@APA Recalc GPS Position == generate APRS string
 void recalcGPS(){
 
-  String Ns, Ew, helper;
+#ifdef TX_BASE91
   char helper_base91[] = {"0000\0"};
+ #endif
+
+  String Ns, Ew, helper;
   float Tlat=48.2012, Tlon=15.6361;
   int i, Talt, lenalt;
   uint32_t aprs_lat=0.0, aprs_lon=0.0;
+  
   float Tspeed=0, Tcourse=0;
   String Speedx, Coursex, Altx;
 
@@ -850,10 +854,20 @@ void recalcGPS(){
 
     if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
     if(Tlat < 0) { Tlat= -Tlat; }
-  
     if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
     if(Tlon < 0) { Tlon= -Tlon; }
-     }
+  }
+    // Wird nur ohne Kompression gebraucht. 
+    #ifndef TX_BASE91
+    float Lat;
+    float Lon;
+    unsigned int Deg_Lat = Tlat;
+    Lat = 100*(Deg_Lat) + (Tlat - Deg_Lat)*60;
+     unsigned int Deg_Lon = Tlon;
+    Lon = 100*(Deg_Lon) + (Tlon - Deg_Lon)*60;
+    #endif
+
+     
 
 outString = "";
 
