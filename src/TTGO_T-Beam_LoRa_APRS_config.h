@@ -55,6 +55,7 @@
                                 // "R" => Recreation Vehicle
 // #define HW_COMMENT              // send Alt und Battery Voltage, UNcomment if you want to send it
 #define MY_COMMENT "" // add your coment here - if empty then no comment is sent
+#define MY_COMMENT2 "" // add some more coment here - if empty then no comment is sent
 // #define MY_COMMENT "TTGO by OE3CJB" // add your coment here - if empty then no comment is sent
 
 // TRANSMIT INTERVAL
