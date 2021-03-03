@@ -37,7 +37,7 @@
 // #define DEBUG             // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
 
-#define DF1OE
+//#define DF1OE
 #ifdef DF1OE
 // Hier kann die eigene config.h eingetragen werden
 #include <TTGO_T-Beam_LoRa_APRS_DF1OE_config.h> // to config user parameters
